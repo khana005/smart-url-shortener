@@ -28,19 +28,36 @@ app.use(
 );
 
 // ─── CORS ─────────────────────────────────────────────────────────────────────
-const allowedOrigins = [
-  process.env.FRONTEND_URL || 'http://localhost:5173',
-  'http://localhost:3000',
-];
+const getOrigins = () => {
+  const envOrigins = (process.env.FRONTEND_URL || '')
+    .split(',')
+    .map((url) => url.trim())
+    .filter(Boolean);
+
+  const defaultOrigins = [
+    'http://localhost:5173',
+    'http://localhost:3000',
+    'http://localhost:5001',
+    'http://localhost:5000',
+  ];
+
+  return [...new Set([...envOrigins, ...defaultOrigins])];
+};
 
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (curl, Postman, mobile apps)
-      if (!origin || allowedOrigins.includes(origin)) {
+      const allowedOrigins = getOrigins();
+      // Allow requests with no origin (curl, Postman, server-to-server)
+      // or matching explicit allowedOrigins or any Vercel deployment preview domain
+      if (
+        !origin ||
+        allowedOrigins.includes(origin) ||
+        (typeof origin === 'string' && origin.endsWith('.vercel.app'))
+      ) {
         callback(null, true);
       } else {
-        callback(new Error('Not allowed by CORS'));
+        callback(new Error(`Not allowed by CORS: ${origin}`));
       }
     },
     credentials: true,
