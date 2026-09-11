@@ -63,13 +63,12 @@ const urlSchema = new mongoose.Schema(
 );
 
 // Hash password before saving if provided
-urlSchema.pre('save', async function (next) {
+urlSchema.pre('save', async function () {
   if (this.isModified('password') && this.password) {
     const salt = await bcrypt.genSalt(10);
     this.password = await bcrypt.hash(this.password, salt);
     this.isPasswordProtected = true;
   }
-  next();
 });
 
 // Compare entered password with stored hash
