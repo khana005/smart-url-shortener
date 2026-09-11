@@ -1,5 +1,6 @@
 require('dotenv').config();
 const express = require('express');
+const path = require('path');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
@@ -78,8 +79,19 @@ app.use('/api/analytics', analyticsRoutes);
 // ─── Redirect Route (MUST be last — catches /:shortCode) ──────────────────────
 app.use('/', redirectRoutes);
 
-// ─── 404 & Error Handlers ─────────────────────────────────────────────────────
-app.use(notFound);
+// ─── Serve Frontend (Production) ────────────────────────────────────────────────
+if (process.env.NODE_ENV === 'production' || process.env.SERVE_FRONTEND === 'true') {
+  app.use(express.static(path.join(__dirname, '../frontend/dist')));
+  
+  // React Router catch-all
+  app.get('*', (req, res) => {
+    res.sendFile(path.resolve(__dirname, '../frontend/dist/index.html'));
+  });
+} else {
+  // ─── 404 & Error Handlers ─────────────────────────────────────────────────────
+  app.use(notFound);
+}
+
 app.use(errorHandler);
 
 // ─── Start Server ─────────────────────────────────────────────────────────────
